@@ -19,7 +19,7 @@ setup(
     long_description=readme() + f"\n\n---\n\n# Changes in version {version}\n\n" + changelog(),
     include_package_data=True,
     long_description_content_type='text/markdown',
-    # url='https://github.com/Romashkaa/pylit',
+    url='https://github.com/Romashkaa/Pylits',
     packages=find_packages(),
     classifiers=[
         'Programming Language :: Python',
@@ -31,7 +31,7 @@ setup(
     ],
     keywords='serialize tools literal store',
     project_urls={
-        # "GitHub": "https://github.com/Romashkaa/pylit",
+        "GitHub": "https://github.com/Romashkaa/Pylits",
     },
     python_requires=">=3.12"
 )
