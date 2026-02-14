@@ -1,4 +1,4 @@
-![PyLits Logo](./images/shadow_banner.png)
+![PyLits Logo](https://github.com/Romashkaa/Pylits/raw/main/images/shadow_banner.png)
 
 # Pylits
 

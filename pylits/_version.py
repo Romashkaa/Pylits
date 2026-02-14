@@ -1,3 +1,3 @@
-__version__ = "0.1.0a"
+__version__ = "0.1.1"
 
 ENGINE_VERSION = "2025-07-08" # YYYY-MM-DD

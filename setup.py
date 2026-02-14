@@ -1,6 +1,24 @@
 from setuptools import setup, find_packages
 
+import shutil
+import os
+
 from pylits._version import __version__ as version
+
+# -----------------------------------------------------------------------------
+# Clean old build artifacts
+# -----------------------------------------------------------------------------
+
+for folder in ("build", "dist"):
+    if os.path.exists(folder):
+        shutil.rmtree(folder)
+
+for egg in [d for d in os.listdir('.') if d.endswith(".egg-info")]:
+    shutil.rmtree(egg)
+
+# -----------------------------------------------------------------------------
+# Helpers to read files
+# -----------------------------------------------------------------------------
 
 def readme():
     with open('README.md', 'r') as f:
@@ -9,6 +27,10 @@ def readme():
 def changelog():
     with open('CHANGELOG.md', 'r') as f:
         return f.read()
+    
+# -----------------------------------------------------------------------------
+# Setup
+# -----------------------------------------------------------------------------
 
 setup(
     name='pylits',
