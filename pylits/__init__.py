@@ -36,12 +36,12 @@
 from ._version import __version__, ENGINE_VERSION
 from ._engine import SupportedTypes
 from ._api import encode, decode
-from .types import SupportedTypes
+from .types import SupportedTypes, SupportedHashableTypes
 from . import types
 
 __all__ = [
     "encode", "decode",
-    "SupportedTypes",
+    "SupportedTypes", "SupportedHashableTypes",
     "types",
     "ENGINE_VERSION", "__version__"
 ]

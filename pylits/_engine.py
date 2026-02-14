@@ -1,7 +1,7 @@
 # MIT License
 # Copyright (c) 2025 Romashka
 
-from .types import SupportedTypes
+from .types import SupportedTypes, SupportedHashableTypes
 
 class Encoder:
     def __init__(self, data: SupportedTypes):
@@ -13,7 +13,7 @@ class Encoder:
     def encode_item(self, item: SupportedTypes) -> str:
         match item: # TODO encoders[type(item)] (faster search)
             case None:
-                return self.encode_none(item)
+                return self.encode_none()
             case bool():
                 return self.encode_bool(item)
             case int():
@@ -31,7 +31,7 @@ class Encoder:
             case dict():
                 return self.encode_dict(item)
 
-    def encode_none(self, value: None) -> str:
+    def encode_none(self) -> str:
         return "0n"
             
     def encode_bool(self, value: bool) -> str:
@@ -72,7 +72,7 @@ class Decoder:
     def decode_item(self) -> SupportedTypes:
         length: int = self.scan_length()
 
-        item_type = self.consume()
+        item_type: str = self.consume()
 
         match item_type:
             case "n":
@@ -93,6 +93,27 @@ class Decoder:
                 return self.decode_set(length) 
             case "d":
                 return self.decode_dict(length) 
+            case _:
+                raise Exception() # TODO "message"
+            
+    def decode_hashable(self) -> SupportedHashableTypes:
+        length: int = self.scan_length()
+
+        item_type: str = self.consume()
+
+        match item_type:
+            case "n":
+                return self.decode_none()
+            case "b":
+                return self.decode_bool()
+            case "i":
+                return self.decode_int(length)
+            case "f":
+                return self.decode_float(length)
+            case "s":
+                return self.decode_str(length)
+            case "t":
+                return self.decode_tuple(length) 
             case _:
                 raise Exception() # TODO "message"
             
@@ -120,8 +141,8 @@ class Decoder:
     def decode_set(self, length: int) -> set:
         return set([self.decode_item() for _ in range(length)])
     
-    def decode_dict(self, length: int) -> dict[SupportedTypes, SupportedTypes]:
-        return dict([(self.decode_item(), self.decode_item()) for _ in range(length)])
+    def decode_dict(self, length: int) -> dict[SupportedHashableTypes, SupportedTypes]:
+        return dict([(self.decode_hashable(), self.decode_item()) for _ in range(length)])
     
     def scan_chunk(self, length: int) -> str:
         return "".join([self.consume() for _ in range(length)])

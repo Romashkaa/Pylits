@@ -5,6 +5,7 @@ from typing import Any
 
 from .types import SupportedTypes
 from ._engine import Decoder, Encoder
+from ._deterministic_encoder import DeterministicEncoder
 
 __all__ = ["encode", "decode"]
 
@@ -36,13 +37,14 @@ def decode(litcode: str) -> Any:
 
     :param litcode: Encoded string in the custom literal serialization format.
     :type litcode: `str`
+
     :return: Decoded Python object reconstructed from the literal string.
     :rtype: `SupportedTypes`
     """
     return Decoder(litcode).decode()
 
 
-def encode(literal: SupportedTypes) -> str:
+def encode(literal: SupportedTypes, sort: bool=False) -> str:
     """
     Encode a Python literal into the PyLits' high-performance serialization format.
 
@@ -70,7 +72,13 @@ def encode(literal: SupportedTypes) -> str:
 
     :param literal: Python literal value to serialize.
     :type literal: `SupportedTypes`
+    :param sort: Whether to use deterministic sorting for sets, dicts, lists, and tuples.
+    :type sort: `bool`
+    
     :return: Deterministic encoded string representation.
     :rtype: `str`
     """
+    if sort:
+        return DeterministicEncoder(literal).encode()
+
     return Encoder(literal).encode()
