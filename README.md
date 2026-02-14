@@ -1,4 +1,4 @@
-![PyLits Logo](./images/banner.png)
+![PyLits Logo](./images/shadow_banner.png)
 
 # Pylits
 
@@ -6,9 +6,9 @@
 
 It provides extremely fast and reliable encoding/decoding while intentionally supporting **only safe literal types**, making it suitable for:
 
-- Зберігання даних в файлі надійніше ніж "eval()"
-- Перетворення вашої БД на динамічно типізовану з підтримкою списків та словників
-- hashing
+- Storing data in files _(safely than eval())_
+- Transforming your DB into dynamic typed structures _with support for lists and dictionaries_
+- Hashing
 
 ## Key Features
 
@@ -95,4 +95,4 @@ This makes `pylits` suitable for hashing.
 ## License
 
 MIT License  
-Copyright (c) 2025 Ving Studio, Romashka
+Copyright (c) 2026 Romashka
