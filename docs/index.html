@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pylits converter</title>
+<style>
+:root{--bg:#f5f5f7;--panel:#fff;--fg:#1d1d1f;--muted:#6e6e73;--line:rgba(60,60,67,.2);--mat:rgba(255,255,255,.72);--blur:blur(20px) saturate(180%);--accent:#0a84ff;--err:#d70015;--code:#f3f4f8;--ok:#1a9d4a;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--panel:#1c1c1e;--fg:#f5f5f7;--muted:#98989f;--line:rgba(255,255,255,.16);--mat:rgba(28,28,30,.72);--err:#ff6b6b;--code:#151517;--ok:#4cd17a}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+header{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:calc(8px + env(safe-area-inset-top,0px)) 14px 8px;background:var(--mat);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border-bottom:1px solid var(--line)}
+header h1{margin:0;font-size:18px;font-weight:700}
+#stat{flex:1;min-width:120px;color:var(--muted);font-size:13px}
+button{font:inherit;cursor:pointer}
+.hb{font-size:14px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:inherit}
+.hb:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+label.hb{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+main{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px;max-width:1500px;margin:0 auto}
+.pane{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;height:calc(100vh - 100px);min-height:420px}
+.ph{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line)}
+.ph .cp{margin-left:auto}
+.seg{display:inline-flex;background:var(--bg);border-radius:9px;padding:2px}
+.seg button{border:0;background:none;color:var(--muted);font-size:13px;padding:3px 11px;border-radius:7px}
+.seg button.on{background:var(--panel);color:var(--fg);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+[hidden]{display:none!important}
+:root{--cs:#2e9d4e;--cn:#d9820a;--ck:#e0305a}
+@media (prefers-color-scheme:dark){:root{--cs:#98c379;--cn:#f0a35e;--ck:#ff7b9c}}
+.ed{flex:1;min-height:0;overflow:auto;background:var(--code);cursor:text}
+.wr{position:relative;min-height:100%}
+/* pre and textarea share EXACTLY the same metrics, so the caret/selection never drift */
+.ed pre,.ed textarea{margin:0;padding:12px 14px 48px;border:0;border-radius:0;font:13.5px/1.6 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-ligatures:none;font-kerning:none;letter-spacing:0;word-spacing:0;tab-size:2;white-space:pre-wrap;word-break:break-all;overflow-wrap:normal;-webkit-text-size-adjust:100%}
+.ed pre{pointer-events:none;color:var(--fg);display:block}
+.ed code{font:inherit;letter-spacing:inherit;white-space:inherit}
+.ed textarea{position:absolute;inset:0;width:100%;height:100%;display:block;resize:none;outline:0;background:transparent;color:transparent;caret-color:var(--fg);overflow:hidden;-webkit-appearance:none;appearance:none}
+.ed textarea::selection{background:rgba(10,132,255,.3);color:transparent}
+@media (pointer:coarse){.ed pre,.ed textarea{font-size:16px}}
+.ts{color:var(--cs)}.tn{color:var(--cn)}.tk{color:var(--ck)}.tu,.tc,.Vs,.Vi,.Vf,.Vb,.Vn{color:var(--muted)}
+.ER{text-decoration:underline wavy var(--err);text-decoration-thickness:1.5px;text-underline-offset:3px;color:var(--err)!important}
+.st{padding:6px 12px;font-size:13px;color:var(--ok);border-top:1px solid var(--line);min-height:32px}
+.st.bad{color:var(--err)}
+.bl{flex:1;min-height:0;overflow:auto;padding:14px 16px 24px;font:13px/22px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.row{position:relative}
+.row:not(.root){padding-left:22px}
+/* children: one fixed indent per level, tree rails in the colour of the parent container */
+.ch{--rc:var(--c);--rl:color-mix(in srgb,var(--rc) 38%,transparent);margin-left:9px}
+.ch.hot{--rl:var(--rc)}
+.ch>.row::before{content:"";position:absolute;left:0;top:0;bottom:0;border-left:2px solid var(--rl)}
+.ch>.row:last-child::before{bottom:auto;height:12px;border-bottom-left-radius:6px}
+.ch>.row::after{content:"";position:absolute;left:0;top:10px;width:14px;border-top:2px solid var(--rl)}
+.ln{display:flex;align-items:flex-start;gap:8px;min-height:22px}
+.hd{cursor:pointer;user-select:none}
+.tg{flex:none;margin-top:2px;padding:0 7px;height:18px;line-height:18px;border-radius:999px;font-size:11px;font-weight:600;background:color-mix(in srgb,var(--c) 18%,transparent);color:color-mix(in srgb,var(--c) 70%,var(--fg))}
+.tg.sd{background:var(--c);color:#fff}
+.nm{color:var(--c);font-weight:600}
+.sv{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word;color:color-mix(in srgb,var(--c) 68%,var(--fg))}
+.emp{color:var(--muted);font-size:12px}
+.ix{flex:none;min-width:var(--iw,1ch);text-align:right;color:var(--muted);font-size:12px}
+.kp{flex:none;display:inline-flex;gap:6px;align-items:flex-start;max-width:50%;margin-top:1px;padding:0 10px 0 1px;line-height:20px;border-radius:999px;background:color-mix(in srgb,var(--c) 11%,transparent);border:1px solid color-mix(in srgb,var(--c) 32%,transparent)}
+.kp .tg{margin-top:0;height:18px;margin:0}
+.kt{display:inline-block;min-width:var(--kw,0);white-space:pre-wrap;word-break:break-word;color:color-mix(in srgb,var(--c) 68%,var(--fg))}
+/* key - value flow: gradient from key colour to value colour, with an arrow head */
+.ar{flex:none;position:relative;width:26px;height:2px;margin:10px 6px 0 -2px;border-radius:2px;background:linear-gradient(90deg,var(--kc),var(--c))}
+.ar::after{content:"";position:absolute;right:-5px;top:-3px;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid var(--c)}
+.cv::before{content:"▾";display:inline-block;color:var(--c);font:normal 12px/22px ui-monospace,Menlo,monospace;transition:transform .15s}
+.row.cl>.ln .cv::before{transform:rotate(-90deg)}
+.dots{display:none;color:var(--muted)}
+.row.cl>.ln .dots{display:inline}
+.row.cl>.ch{display:none}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+@media (max-width:860px){main{grid-template-columns:1fr}.pane{height:75vh}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pylits</h1>
+  <span id="stat"></span>
+  <button class="hb" id="sample">Example</button>
+  <button class="hb" id="swap" title="Swap formats">⇄</button>
+  <label class="hb" title="Pylits text: editing a string / number value updates its length prefix automatically"><input type="checkbox" id="auto" checked>Auto length</label>
+  <label class="hb" title="Sort dict keys and set elements"><input type="checkbox" id="srt" checked>Deterministic</label>
+</header>
+<main id="main"></main>
+<div class="toast" id="toast" role="status"></div>
+<script>
+/* ---------- types and colors ---------- */
+const TY={n:'#8e8e93',b:'#ff375f',i:'#ff9500',f:'#c99700',s:'#34c759',l:'#0a84ff',t:'#5e5ce6',e:'#30b0c7',d:'#af52de'};
+const NM={l:'list',t:'tuple',e:'set',d:'dict'};
+document.head.appendChild(Object.assign(document.createElement('style'),{textContent:Object.entries(TY).map(([t,c])=>
+ `.c-${t}{--c:${c}}.L${t}{color:color-mix(in srgb,${c} 50%,transparent)}.T${t}{color:color-mix(in srgb,${c} 85%,var(--fg))}`).join('')}));
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const cpl=s=>{let n=0;for(const _ of s)n++;return n};
+
+/* ---------- Pylits: encoder ---------- */
+function enc(v,srt){
+  switch(v.t){
+    case'n':return'0n';
+    case'b':return'1b'+(v.v?'T':'F');
+    case'i':{const x=String(v.v);return x.length+'i'+x}
+    case'f':return v.v.length+'f'+v.v;
+    case's':return cpl(v.v)+'s'+v.v;
+  }
+  let a;
+  if(v.t=='d'){a=v.c.map(([k,x])=>[enc(k,srt),enc(x,srt)]);if(srt)a.sort((p,q)=>p[0]<q[0]?-1:p[0]>q[0]?1:0);a=a.map(p=>p[0]+p[1])}
+  else{a=v.c.map(x=>enc(x,srt));if(srt&&v.t=='e')a.sort()}
+  return v.c.length+v.t+a.join('');
+}
+
+/* ---------- Pylits: decoder (reads lengths, no regex) ---------- */
+function pdec(src){
+  const N=src.length,cl=new Array(N).fill(''),nodes=[];let p=0;
+  const paint=(a,b,c)=>{for(let i=a;i<b&&i<N;i++)cl[i]=c};
+  const take=(a,n)=>{let k=0;while(k<n&&a<N){a+=(src.charCodeAt(a)&0xFC00)==0xD800&&a+1<N?2:1;k++}return k<n?-1:a};
+  function item(par,key){
+    let q=p;while(q<N&&src.charCodeAt(q)>47&&src.charCodeAt(q)<58)q++;
+    if(q==p)throw[p,'Expected a length number'];
+    if(q>=N)throw[q,'Expected a type letter'];
+    const len=+src.slice(p,q),t=src[q];
+    if(!'nbifslted'.includes(t))throw[q,'Unknown type “'+t+'”'];
+    if(key&&'lde'.includes(t))throw[q,'Dict key must be hashable'];
+    const nd={t,len,s:p,q,e:N,par};nodes.push(nd);
+    paint(p,q,'L'+t);paint(q,q+1,'T'+t);p=q+1;
+    if('lted'.includes(t)){
+      const c=[];
+      for(let k=0;k<len;k++){if(t=='d'){const a=item(nd,true);c.push([a,item(nd)])}else c.push(item(nd))}
+      nd.e=p;return nd.val={t,c};
+    }
+    let e=p,v={t};
+    if(t=='b'){const ch=src[p];if(!ch||!'TFtf'.includes(ch))throw[p,'Expected T or F'];e=p+1;v.v=ch=='T'||ch=='t'}
+    else if(t!='n'){
+      e=take(p,len);if(e<0)throw[N,'Not enough characters: expected '+len];
+      const x=src.slice(p,e);
+      if(t=='i'){if(!/^[-+]?\d+$/.test(x))throw[p,'Invalid integer'];v.v=BigInt(x)}
+      else if(t=='f'){if(!/^[-+]?(\d+\.?\d*([eE][-+]?\d+)?|\.\d+([eE][-+]?\d+)?|inf|nan)$/i.test(x))throw[p,'Invalid float'];v.v=x}
+      else v.v=x;
+    }
+    nd.vs=p;nd.ok=true;paint(p,e,'V'+t);p=e;nd.e=p;return nd.val=v;
+  }
+  let root=null,err=null;
+  try{if(N){root=item(null,false);if(p<N)throw[p,'Unexpected characters after data']}}
+  catch(e){if(!Array.isArray(e))throw e;err=e;paint(e[0],N,'ER')}
+  return{cl,nodes,root,err};
+}
+
+/* ---------- Python / JSON: literal parser ---------- */
+function pyF(n){
+  if(isNaN(n))return'nan';if(!isFinite(n))return n<0?'-inf':'inf';
+  let s=String(n);
+  if((Number.isInteger(n)&&Math.abs(n)>=1e16)||(n!==0&&Math.abs(n)<1e-4))s=n.toExponential();
+  if(s.includes('e'))return s.replace(/e([+-])(\d)$/,'e$10$2');
+  return s.includes('.')?s:s+'.0';
+}
+function parseLit(s){
+  let i=0;
+  const W=/[A-Za-z_]\w*|[-+]?(?:inf|Infinity|nan|NaN)\b|[-+]?(?:0[xX][0-9a-fA-F_]+|(?:\d[\d_]*\.?[\d_]*|\.\d+)(?:[eE][-+]?\d+)?)/y;
+  const fail=m=>{throw[i,m]};
+  const ws=()=>{for(;i<s.length;i++){const c=s[i];if(c=='#'){while(i<s.length&&s[i]!='\n')i++;i--}else if(!/\s/.test(c))break}};
+  function str(q){
+    i++;let o='';
+    const M={n:'\n',t:'\t',r:'\r',b:'\b',f:'\f','0':'\0','\\':'\\',"'":"'",'"':'"','/':'/'};
+    for(;;){
+      const c=s[i];if(c===undefined||c=='\n')fail('Unterminated string');
+      if(c==q){i++;return o}
+      if(c=='\\'){
+        const n=s[i+1];i+=2;
+        if(n=='u'||n=='x'){const L=n=='u'?4:2,h=s.substr(i,L);if(h.length<L||!/^[0-9a-fA-F]+$/.test(h))fail('Invalid escape sequence');o+=String.fromCharCode(parseInt(h,16));i+=L}
+        else if(Object.hasOwn(M,n))o+=M[n];else o+='\\'+(n??'');
+      }else{o+=c;i++}
+    }
+  }
+  function key(){const p=i;ws();const k=val();if('lde'.includes(k.t)){i=p;fail('Key must be hashable (not list/dict/set)')}return k}
+  function seq(close,t){
+    const c=[];let comma=false;
+    for(;;){ws();if(s[i]==close){i++;break}c.push(val());ws();comma=false;if(s[i]==','){i++;comma=true}else if(s[i]!=close)fail('Expected , or '+close)}
+    return t=='t'&&c.length==1&&!comma?c[0]:{t,c};
+  }
+  function brace(){
+    ws();if(s[i]=='}'){i++;return{t:'d',c:[]}}
+    const k=key();ws();
+    if(s[i]==':'){
+      i++;const c=[[k,val()]];
+      for(;;){ws();if(s[i]==','){i++;ws();if(s[i]=='}'){i++;break}const k2=key();ws();if(s[i]!=':')fail('Expected :');i++;c.push([k2,val()])}else if(s[i]=='}'){i++;break}else fail('Expected , or }')}
+      return{t:'d',c};
+    }
+    const c=[k];
+    for(;;){ws();if(s[i]==','){i++;ws();if(s[i]=='}'){i++;break}c.push(key())}else if(s[i]=='}'){i++;break}else fail('Expected , or }')}
+    return{t:'e',c};
+  }
+  function val(){
+    ws();const c=s[i];if(c===undefined)fail('Unexpected end of data');
+    if(c=='[')return i++,seq(']','l');
+    if(c=='(')return i++,seq(')','t');
+    if(c=='{')return i++,brace();
+    if(c=='"'||c=="'")return{t:'s',v:str(c)};
+    W.lastIndex=i;const m=W.exec(s);if(!m||m.index!=i)fail('Unexpected character “'+c+'”');
+    const x=m[0];i+=x.length;
+    if(/^[-+]?(inf|Infinity|nan|NaN)$/.test(x))return{t:'f',v:x.replace('Infinity','inf').replace('NaN','nan').replace('+','')};
+    const B={True:1,true:1,False:0,false:0};
+    if(Object.hasOwn(B,x))return{t:'b',v:!!B[x]};
+    if(x=='None'||x=='null')return{t:'n'};
+    const C={set:'e',tuple:'t',list:'l',dict:'d'};
+    if(Object.hasOwn(C,x)){ws();if(s[i]=='('){i++;ws();if(s[i]!=')')fail('Expected )');i++;return{t:C[x],c:[]}}}
+    if(/^[A-Za-z_]/.test(x)){i-=x.length;fail('Unknown identifier “'+x+'”')}
+    const y=x.replace(/_/g,'');
+    if(/[.eE]/.test(y)&&!/^[-+]?0[xX]/.test(y))return{t:'f',v:pyF(Number(y))};
+    try{return{t:'i',v:BigInt(y)}}catch{fail('Invalid number')}
+  }
+  const v=val();ws();if(i<s.length)fail('Unexpected characters after data');return v;
+}
+
+/* ---------- Python / JSON: serializer ---------- */
+let CP=false;
+function pyStr(s){
+  const q=s.includes("'")&&!s.includes('"')?'"':"'";let o='';
+  for(const ch of s){const c=ch.codePointAt(0);o+=ch=='\\'?'\\\\':ch==q?'\\'+q:ch=='\n'?'\\n':ch=='\r'?'\\r':ch=='\t'?'\\t':c<32||c==127?'\\x'+c.toString(16).padStart(2,'0'):ch}
+  return q+o+q;
+}
+function fmt(v,js,d=0){
+  switch(v.t){
+    case'n':return js?'null':'None';
+    case'b':return js?String(v.v):v.v?'True':'False';
+    case'i':return String(v.v);
+    case'f':return js?({inf:'Infinity','-inf':'-Infinity',nan:'NaN'}[v.v]||v.v):v.v;
+    case's':return js?JSON.stringify(v.v):pyStr(v.v);
+  }
+  const sep=CP?':':': ';
+  const items=v.t=='d'?v.c.map(([k,x])=>(js?JSON.stringify(k.t=='s'?k.v:fmt(k,false)):fmt(k,false,d+1))+sep+fmt(x,js,d+1)):v.c.map(x=>fmt(x,js,d+1));
+  const [o,c]=v.t=='d'?['{','}']:v.t=='t'&&!js?['(',')']:v.t=='e'&&!js?['{','}']:['[',']'];
+  if(!items.length)return v.t=='e'&&!js?'set()':o+c;
+  const tc=v.t=='t'&&!js&&items.length==1?',':'';
+  if(CP)return o+items.join(',')+tc+c;
+  const one=items.join(', ');
+  if(!one.includes('\n')&&one.length<60)return o+one+tc+c;
+  return o+'\n'+items.map(x=>'  '.repeat(d+1)+x).join(',\n')+tc+'\n'+'  '.repeat(d)+c;
+}
+const ser=(v,f)=>f=='py'?fmt(v,false):f=='js'?fmt(v,true):enc(v,$srt.checked);
+
+/* ---------- block view ---------- */
+const lenOf=v=>v.t=='n'?0:v.t=='b'?1:v.t=='i'?String(v.v).length:v.t=='f'?v.v.length:v.t=='s'?cpl(v.v):v.c.length;
+const isC=v=>'lted'.includes(v.t);
+const tg=(v,solid)=>`<span class="tg${solid?' sd':''}">${lenOf(v)}${v.t}</span>`;
+const sx=v=>v.t=='n'?'None':v.t=='b'?(v.v?'True':'False'):v.t=='s'?v.v:String(v.v);
+const sval=v=>{const x=sx(v);return`<span class="sv">${x===''?'<i class="emp">empty</i>':esc(x)}</span>`};
+const keyTxt=k=>k.t=='t'?fmt(k,false).replace(/\s*\n\s*/g,' '):sx(k);
+const keyHTML=k=>`<span class="kp c-${k.t}">${tg(k)}<span class="kt">${esc(keyTxt(k))}</span></span>`;
+function head(v){
+  if(!isC(v))return tg(v)+sval(v);
+  return tg(v,1)+`<span class="nm">${NM[v.t]}</span>`+(v.c.length?'<i class="cv"></i><span class="dots">⋯</span>':'<i class="emp">empty</i>');
+}
+function kids(v){
+  if(!isC(v)||!v.c.length)return'';
+  if(v.t=='d'){
+    const kw=Math.min(24,Math.max(...v.c.map(([k])=>cpl(keyTxt(k)))));
+    return`<div class="ch" style="--kw:${kw}ch">${v.c.map(([k,x])=>row(x,keyHTML(k)+`<i class="ar" style="--kc:${TY[k.t]}"></i>`)).join('')}</div>`;
+  }
+  const iw=String(v.c.length-1).length;
+  return`<div class="ch" style="--iw:${iw}ch">${v.c.map((x,i)=>row(x,`<span class="ix">${v.t=='e'?'•':i}</span>`)).join('')}</div>`;
+}
+function row(v,label,root){
+  return`<div class="row c-${v.t}${root?' root':''}"><div class="ln${isC(v)&&v.c.length?' hd':''}">${label||''}${head(v)}</div>${kids(v)}</div>`;
+}
+const blk=v=>row(v,'',1);
+
+/* ---------- highlighting ---------- */
+function tok(t){
+  const cl=new Array(t.length).fill('');
+  const R=/("(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?)|(#[^\n]*)|(\b\d[\d_]*\.?\d*(?:[eE][-+]?\d+)?|\binf\b|\bnan\b)|\b(True|False|None|true|false|null)\b|([\[\]{}(),:])/g;
+  let m;while(m=R.exec(t)){const c=m[1]?'ts':m[2]?'tc':m[3]?'tn':m[4]?'tk':'tu';for(let i=m.index;i<m.index+m[0].length;i++)cl[i]=c}
+  return cl;
+}
+function an(fmt,t){
+  if(fmt=='pl'){const r=pdec(t);return{cl:r.cl,nodes:r.nodes,V:r.err?null:r.root,err:t.trim()?r.err:[0,'Empty']}}
+  const cl=tok(t);let V=null,err=null;
+  try{V=parseLit(t)}catch(e){err=Array.isArray(e)?e:[0,String(e)];if(err[0]<t.length)cl[err[0]]+=' ER'}
+  return{cl,V,err};
+}
+function paintHTML(t,cl){
+  let h='',run='',cur=null;
+  const flush=()=>{if(run)h+=cur?`<span class="${cur}">${esc(run)}</span>`:esc(run);run=''};
+  for(let i=0;i<t.length;i++){const c=cl[i]||'';if(c!==cur){flush();cur=c}run+=t[i]}
+  flush();return h;
+}
+
+/* ---------- panes ---------- */
+const $srt=document.getElementById('srt'),$stat=document.getElementById('stat'),$auto=document.getElementById('auto');
+const FM={py:'Python',js:'JSON',pl:'Pylits'};
+let V=null;
+function mkPane(id,fmtName,mode){
+  const el=document.createElement('section');el.className='pane';
+  el.innerHTML=`<div class="ph"><div class="seg" data-k="fmt">${Object.entries(FM).map(([k,n])=>`<button data-v="${k}">${n}</button>`).join('')}</div><div class="seg" data-k="mode"><button data-v="blocks">Blocks</button><button data-v="code">Text</button></div><button class="hb cp">Copy</button></div><div class="ed"><div class="wr"><pre><code></code></pre><textarea spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="Editor"></textarea></div></div><div class="bl"></div><div class="st"></div>`;
+  document.getElementById('main').appendChild(el);
+  const p={el,fmt:fmtName,mode,ed:el.querySelector('.ed'),code:el.querySelector('code'),ta:el.querySelector('textarea'),bl:el.querySelector('.bl'),st:el.querySelector('.st'),last:null,old:'',fix:false};
+  p.ta.addEventListener('input',e=>{
+    if(p.fix)return;
+    if($auto.checked&&p.fmt=='pl'&&!(e.inputType||'').startsWith('history'))autoLen(p);
+    analyze(p);
+    if(!p.last.err){V=p.last.V;stats();P.forEach(q=>q!==p&&render(q))}
+  });
+  p.ta.addEventListener('keydown',e=>{if(e.key=='Tab'){e.preventDefault();document.execCommand('insertText',false,'  ')}});
+  p.ed.addEventListener('mousedown',e=>{if(e.target===p.ed){e.preventDefault();p.ta.focus();p.ta.setSelectionRange(p.ta.value.length,p.ta.value.length)}});
+  el.querySelector('.ph').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    if(b.classList.contains('cp')){navigator.clipboard.writeText(isBlocks(p)?ser(V,p.fmt):p.ta.value).then(()=>toast('Copied'),()=>toast('Copy failed'));return}
+    p[b.parentNode.dataset.k]=b.dataset.v;render(p);
+  });
+  p.bl.addEventListener('mouseover',e=>{
+    p.bl.querySelectorAll('.hot').forEach(x=>x.classList.remove('hot'));
+    const r=e.target.closest('.row');if(!r)return;
+    const c=e.target.closest('.hd')?r.querySelector(':scope>.ch'):e.target.closest('.ch');
+    c&&c.classList.add('hot');
+  });
+  p.bl.addEventListener('mouseleave',()=>p.bl.querySelectorAll('.hot').forEach(x=>x.classList.remove('hot')));
+  p.bl.addEventListener('click',e=>{const h=e.target.closest('.hd');if(h)h.parentNode.classList.toggle('cl')});
+  return p;
+}
+const isBlocks=p=>p.fmt=='pl'&&p.mode=='blocks';
+function analyze(p){
+  const t=p.ta.value;p.old=t;p.last=an(p.fmt,t);
+  p.code.innerHTML=paintHTML(t,p.last.cl)+'\n ';
+  const r=p.last,el=p.st;
+  if(r.err){const b=t.slice(0,r.err[0]).split('\n');el.className='st bad';el.textContent=`Line ${b.length}, col ${b[b.length-1].length+1}: ${r.err[1]}`}
+  else{el.className='st';el.textContent='✓ Valid'}
+}
+/* Pylits auto-length: if the edit happened inside a string / int / float value, rewrite its length prefix */
+function autoLen(p){
+  const nw=p.ta.value,od=p.old,r=p.last;if(nw===od||!r||!r.nodes)return;
+  const m=Math.min(od.length,nw.length);
+  let a=0;while(a<m&&od[a]===nw[a])a++;
+  let b=0;while(b<m-a&&od[od.length-1-b]===nw[nw.length-1-b])b++;
+  const oe=od.length-b;
+  const n=r.nodes.find(n=>n.ok&&'sif'.includes(n.t)&&a>=n.vs&&oe<=n.e);
+  if(!n)return;
+  const val=nw.slice(n.vs,n.e+(nw.length-od.length)),L=String(cpl(val));
+  if(nw.slice(n.s,n.q)===L)return;
+  const c0=p.ta.selectionStart,c1=p.ta.selectionEnd,d=L.length-(n.q-n.s),sh=x=>x>=n.q?x+d:x;
+  p.fix=true;
+  p.ta.setSelectionRange(n.s,n.q);
+  if(!document.execCommand('insertText',false,L))p.ta.setRangeText(L,n.s,n.q,'end');
+  p.fix=false;
+  p.ta.setSelectionRange(sh(c0),sh(c1));
+}
+function render(p){
+  p.el.querySelectorAll('.seg').forEach(s=>s.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v==p[s.dataset.k])));
+  p.el.querySelector('[data-k=mode]').hidden=p.fmt!='pl';
+  const bk=isBlocks(p);p.bl.hidden=!bk;p.ed.hidden=bk;
+  if(bk){p.bl.innerHTML=blk(V);p.st.className='st';p.st.textContent='Click a container header to collapse · hover to highlight its branch'}
+  else{p.ta.value=ser(V,p.fmt);analyze(p)}
+}
+function stats(){
+  const a=enc(V,true).length;CP=true;const b=fmt(V,true).length;CP=false;
+  const d=Math.round((1-a/b)*100);
+  $stat.textContent=`Pylits ${a} chars · JSON ${b} chars (${d>=0?'−'+d:'+'+(-d)}%)`;
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),1400)}
+
+const SAMPLE=`{
+  "name": "Pylits",
+  "version": 2.1,
+  "active": True,
+  "owner": None,
+  "tags": ["fast", "safe", "héllo"],
+  "point": (1, 2),
+  "ids": {3, 1, 2},
+  "nested": {"a": [1, {"b": "deep"}], "empty": []}
+}`;
+const P=[mkPane('a','py','code'),mkPane('b','pl','blocks')];
+const loadSample=()=>{V=parseLit(SAMPLE);stats();P.forEach(render)};
+document.getElementById('sample').onclick=loadSample;
+document.getElementById('swap').onclick=()=>{const[a,b]=P;[a.fmt,b.fmt]=[b.fmt,a.fmt];[a.mode,b.mode]=[b.mode,a.mode];P.forEach(render)};
+$srt.onchange=()=>{stats();P.forEach(p=>p.fmt=='pl'&&render(p))};
+loadSample();
+</script>
+</body>
+</html>

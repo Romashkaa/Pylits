@@ -6,17 +6,17 @@
 
 It provides extremely fast and reliable encoding/decoding while intentionally supporting **only safe literal types**, making it suitable for:
 
-- Storing data in files _(safely than eval())_
+- Storing data in files _(safely than `eval()`)_
 - Transforming your DB into dynamic typed structures _with support for lists and dictionaries_
 - Hashing
 
 ## Key Features
 
-- ⚡ **Very fast** — minimal parsing overhead compared to JSON-like formats
-- 🔒 **Safe by design** — supports only pure Python literals
-- 🎯 **Deterministic** — identical data always produces identical encoded output
-- 🧩 **Zero dependencies** — pure Python implementation
-- 🔁 **Lossless round-trip** — `decode(encode(x)) == x`
+- **Very fast** — minimal parsing overhead compared to JSON-like formats
+- **Safe by design** — supports only pure Python literals
+- **Deterministic** — identical data always produces identical encoded output
+- **Zero dependencies** — pure Python implementation
+- **Lossless round-trip** — `decode(encode(x)) == x`
 
 ## Supported Types
 
@@ -94,5 +94,5 @@ This makes `pylits` suitable for hashing.
 
 ## License
 
-MIT License  
+MIT License
 Copyright (c) 2026 Romashka
